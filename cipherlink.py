@@ -35,20 +35,31 @@ def moreComplexRandomWordGenerator():
 
     return word
 
-def skipWordGenerator(skipLength):
-    word = ''
-    while len(word) < skipLength:
-        word += complexRandomWordGenerator()
-    return word[:skipLength]
-
 def createRandomWord(length):
     word = ''
     while len(word) < length:
-        word += complexRandomWordGenerator()
-    return word[:length] 
+        if length == 4:
+            word += randomWordGenerator()
+        elif length == 6:
+            word += complexRandomWordGenerator()
+        elif length == 8:
+            word += moreComplexRandomWordGenerator()
+        else:
+            print(Fore.RED + "Invalid choice, please try again. @lengthError")
+            noMenu()
 
-x = random.randint(4, 8)
-skipLength = 2
+    return word[:length]
+
+def generateRandomWord(complexity):
+    if complexity == 1:
+        return createRandomWord(4)
+    elif complexity == 2:
+        return createRandomWord(6)
+    elif complexity == 3:
+        return createRandomWord(8)
+    else:
+        print(Fore.RED + "Invalid choice, please try again. @complexityError")
+        noMenu()
 
 # GLOBALS
 
@@ -63,20 +74,12 @@ def noMenu():
     elif choice == '3':
         options()
     else:
-        print(Fore.RED + "Invalid choice, please try again.")
+        print(Fore.RED + "Invalid choice, please try again. @choiceErrorNoMenu")
         noMenu()
-
-def cipherCount():
-    with open('ciphers.json', 'r') as f:
-
-        if f.read() == '':
-            return 0
-        jsonCipher = json.load(f)
-        return len(jsonCipher)
 
 def createCipher(name, complexity):
     try:
-        with open('ciphers.json', 'r') as f:
+        with open(f'{name}.json', 'r') as f:
             jsonCipher = json.load(f)
     except FileNotFoundError:
         jsonCipher = {}
@@ -87,24 +90,26 @@ def createCipher(name, complexity):
         print(Fore.RED + "Cipher already exists!")
         return
     
-    data = {
-        "ciphername": name,
-        "complexity": complexity
+    jsonCipher = {
+        'ciphername': name,
+        'complexity': complexity
     }
 
+    jsonCipher["ciphername"] = name
+    jsonCipher["complexity"] = complexity
+
     with open(f'{name}.json', 'w') as f:
-        json.dump(data, f, indent=4)
-
-    jsonCipher[data["ciphername"]] = name
-    jsonCipher[data["complexity"]] = complexity
-
-    with open('ciphers.json', 'w') as f:
         json.dump(jsonCipher, f, indent=4)
 
+    with open(f'{name}.json', 'w') as f:
+        json.dump(jsonCipher, f, indent=4)
+
+    noMenu()
+
 def readCipher(cipherName):
-    with open('ciphers.json', 'r') as f:
+    with open(f'{cipherName}.json', 'r') as f:
         jsonCipher = json.load(f)
-        return jsonCipher[cipherName]
+        return jsonCipher
     
 def cipherBrowser(cipherName):
     # List ciphers using tabulate
@@ -123,6 +128,31 @@ def cipherBrowser(cipherName):
 
         noMenu()
 
+def dictCreate(cipherName, complexity):
+    cipher = readCipher(cipherName)
+
+    print(Fore.GREEN + "Enter cipher name: ('back' to go back) ")
+    enterWord = input(Fore.GREEN + "$: ")
+    enterWord = enterWord.lower()
+
+    if enterWord in cipher:
+        print(Fore.RED + "Such word already exists!")
+    elif enterWord == '':
+        print(Fore.RED + "Invalid choice, please try again. @valueEmptyError")
+        noMenu()
+    elif enterWord == 'back':
+        manageCipher(cipherName)
+    elif enterWord != '' and enterWord not in cipher:
+        generatedValue = generateRandomWord(int(complexity))  # Store the generated word
+        print(Fore.GREEN + "Generated Value: " + Fore.CYAN + generatedValue + Fore.GREEN + " | Writing value..." )
+        cipher[enterWord] = generatedValue  # Use the stored value
+        with open(f'{cipherName}.json', 'w') as f:
+            json.dump(cipher, f, indent=4)
+    else:
+        print(Fore.RED + "Invalid choice, please try again. @elseError")
+
+    dictCreate(cipherName, complexity)
+
 def manageCipher(cipherName):
     with open(f'{cipherName}.json', 'r') as f:
         jsonCipher = json.load(f)
@@ -136,13 +166,16 @@ def manageCipher(cipherName):
 
         print(Fore.GREEN + "1. Change name")
         print(Fore.GREEN + "2. Change complexity")
-        print(Fore.GREEN + "3. Delete cipher")
-        print(Fore.GREEN + "4. Back")
+        print(Fore.GREEN + "3. Add new words to cipher")
+        print(Fore.GREEN + "4. Delete cipher")
+        print(Fore.GREEN + "5. Back")
         choice = input(Fore.GREEN + "$: ")
 
         if choice == '1':
             newCipherName = input(Fore.GREEN + "Enter new name: ")
             jsonCipher['ciphername'] = newCipherName
+            # Also change file name
+            os.rename(f'{cipherName}.json', f'{newCipherName}.json')
             with open(f'{cipherName}.json', 'w') as f:
                 json.dump(jsonCipher, f, indent=4)
             manageCipher(cipherName)
@@ -153,7 +186,9 @@ def manageCipher(cipherName):
                 json.dump(jsonCipher, f, indent=4)
             manageCipher(cipherName)
         elif choice == '3':
-            with open('ciphers.json', 'r') as f:
+            dictCreate(cipherName, jsonCipher['complexity'])
+        elif choice == '4':
+            with open(f'{cipherName}.json', 'r') as f:
                 jsonCipher = json.load(f)
 
                 if jsonCipher == {}:
@@ -171,7 +206,7 @@ def manageCipher(cipherName):
                 if deleteCipher in jsonCipher:
                     del jsonCipher[deleteCipher]
 
-                    with open('ciphers.json', 'w') as f:
+                    with open(f'{cipherName}.json', 'w') as f:
                         json.dump(jsonCipher, f, indent=4)
 
                     print(Fore.GREEN + "Cipher deleted successfully!")
@@ -179,10 +214,10 @@ def manageCipher(cipherName):
                 else:
                     print(Fore.RED + "Cipher doesn't exist!")
                     manageCipher(cipherName)
-        elif choice == '4':
+        elif choice == '5':
             browse()
         else:
-            print(Fore.RED + "Invalid choice, please try again.")
+            print(Fore.RED + "Invalid choice, please try again. @cipherManagementError")
             manageCipher(cipherName)
         
         dictionary = jsonCipher[cipherName]
@@ -197,7 +232,7 @@ _________ .__       .__                 .____    .__        __
  \______  /__|   __/|___|  /\___  >__|  |_______ \__|___|  /__|_ \
         \/   |__|        \/     \/              \/       \/     \/
 
-                        Made by: Giorgi Mirzashvili aka Grigol Mersadze
+                        Made by: Grigol Mersadze
 """
     print(Fore.YELLOW + ascii_art)
     print(Fore.GREEN + "1. Browse your ciphers")
@@ -212,8 +247,8 @@ _________ .__       .__                 .____    .__        __
     elif choice == '3':
         options()
     else:
-        print(Fore.RED + "Invalid choice, please try again.")
-        main()
+        print(Fore.RED + "Invalid choice, please try again. @mainError")
+        noMenu()
 
 
 def browse():
@@ -235,28 +270,41 @@ def browse():
     chosenCipher = input(Fore.GREEN + "$: ")
 
     if chosenCipher + '.json' not in json_files:
-        print(Fore.RED + "Invalid choice, please try again.")
-        browse()
+        print(Fore.RED + "Invalid choice, please try again. @browserInvalidChoiceError")
+        main()
     elif chosenCipher + '.json' in json_files:
         manageCipher(chosenCipher)
-    elif chosenCipher == '1' or chosenCipher == '2' or chosenCipher == '3':
-        noMenu()
-
+    elif chosenCipher == '1':
+        create()
+    elif chosenCipher == '2':
+        browse()
+    elif chosenCipher == '3':
+        options()
+    else:
+        print(Fore.RED + "Invalid choice, please try again. @browserElseError")
+        main()
 
 def create():
     print(Fore.GREEN, "1. Choose a name for cipher: ")
     name = input()
+
+    if name == '':
+        print(Fore.RED + "Invalid choice, please try again. @nameEmptyError")
+        create()
+    elif name == 'menu':
+        main()
+
     print(Fore.GREEN, "2. Choose a complexity of your cipher: (1 - 3) ")
     complexity = input()
 
     if complexity not in ['1', '2', '3']:
-        print(Fore.RED + "Invalid choice, please try again.")
+        print(Fore.RED + "Invalid choice, please try again. @creationError")
         create()
 
     createCipher(name, complexity)
 
 
 def options():
-    pass
+    noMenu()
 
 main()
