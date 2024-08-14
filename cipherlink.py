@@ -146,14 +146,132 @@ def dictCreate(cipherName, complexity):
         manageCipher(cipherName)
     elif enterWord != '' and enterWord not in cipher:
         generatedValue = generateRandomWord(int(complexity))  # Store the generated word
-        print(Fore.GREEN + "Generated Value: " + Fore.CYAN + generatedValue + Fore.GREEN + " | Writing value..." )
-        cipher[enterWord] = generatedValue  # Use the stored value
-        with open(f'{cipherName}.json', 'w') as f:
-            json.dump(cipher, f, indent=4)
+        if generatedValue in cipher.values():
+            print(Fore.RED + "Value already exists!")
+            manageCipher(cipherName)
+        else:
+            print(Fore.GREEN + "Generated Value: " + Fore.CYAN + generatedValue + Fore.GREEN + " | Writing value..." )
+            cipher[enterWord] = generatedValue  # Use the stored value
+            with open(f'{cipherName}.json', 'w') as f:
+                json.dump(cipher, f, indent=4)
     else:
         print(Fore.RED + "Invalid choice, please try again. @elseError")
 
     dictCreate(cipherName, complexity)
+
+
+def dictRemove(cipherName):
+    cipher = readCipher(cipherName)
+
+    while True:
+        print(Fore.GREEN + "Enter cipher name to remove: ('back' to go back)")
+        enterWord = input(Fore.GREEN + "$: ").lower()
+
+        if enterWord == 'back':
+            break  # Exit the loop and function
+        elif enterWord in ('', 'ciphername', 'complexity'):
+            print(Fore.RED + "Invalid choice, please try again. @valueEmptyErrorRemove")
+        elif enterWord not in cipher:
+            print(Fore.RED + "Such word doesn't exist!")
+        else:
+            # Remove the word from the cipher
+            cipher.pop(enterWord)
+            
+            # Write the updated cipher back to the same JSON file
+            with open(f'{cipherName}.json', 'w') as f:
+                json.dump(cipher, f, indent=4)
+            print(Fore.GREEN + f"Word '{enterWord}' successfully removed!")
+        
+    # When the loop exits, return to manageCipher or previous menu
+    manageCipher(cipherName)
+
+def dictReassign(cipherName, complexity):
+    cipher = readCipher(cipherName)
+
+    while True:
+        print(Fore.GREEN + "Enter word to reassign: ('back' to go back)")
+        enterWord = input(Fore.GREEN + "$: ").lower()
+
+        if enterWord == 'back':
+            break  # Exit the loop and function
+        elif enterWord in ('', 'ciphername', 'complexity'):
+            print(Fore.RED + "Invalid choice, please try again. @valueEmptyErrorReassign")
+        elif enterWord not in cipher:
+            print(Fore.RED + "Such word doesn't exist!")
+        else:
+            # Remove the word from the cipher
+            cipher.pop(enterWord)
+            # Generate new value for word
+            generatedValue = generateRandomWord(int(complexity))  # Store the generated word
+
+            # Check if there's already same value in the cipher
+            if generatedValue in cipher.values():
+                print(Fore.RED + "Value already exists!")
+                manageCipher(cipherName)
+            else:
+                print(Fore.GREEN + "Generated Value: " + Fore.CYAN + generatedValue + Fore.GREEN + " | Writing value..." )
+                cipher[enterWord] = generatedValue  # Use the stored value
+                with open(f'{cipherName}.json', 'w') as f:
+                    json.dump(cipher, f, indent=4)
+                print(Fore.GREEN + f"Word '{enterWord}' successfully reassigned!")
+
+    # When the loop exits, return to manageCipher or previous menu
+    manageCipher(cipherName)
+
+def advancedOptions(cipherName):
+    # Bulk functions like bulk modification, deletion or creation
+    # Search functions, filtering functions, etc.
+    # 2 way encryption, decryption, etc.
+    pass
+
+def translate(cipherName):
+    print(Fore.GREEN + "Encryption (e) or Decryption (d): ('back' to go back) ")
+    enterWord = input(Fore.GREEN + "$: ")
+    enterWord = enterWord.lower()
+
+    if enterWord == 'back':
+        manageCipher(cipherName)
+
+    if enterWord != 'e' and enterWord != 'd':
+        print(Fore.RED + "Invalid choice, please try again. @elseError")
+        translate(cipherName)
+
+    if enterWord == 'd':
+        decrypt(cipherName)
+    
+    if enterWord == 'e':
+        print(Fore.GREEN + "Enter sentence to translate: ")
+        sentence = input(Fore.GREEN + "$: ")
+
+        if sentence == '':
+            print(Fore.RED + "Invalid choice, please try again. @valueEmptyError")
+            noMenu()
+
+        with open(f'{cipherName}.json', 'r') as f:
+            jsonCipher = json.load(f)
+            for key, value in jsonCipher.items():
+                sentence = sentence.replace(key, value)
+            print(Fore.GREEN + sentence)
+
+    noMenu()
+
+
+def decrypt(cipherName):
+    print(Fore.GREEN + "Enter sentence to decrypt: ")
+    sentence = input(Fore.GREEN + "$: ")
+
+    if sentence == '':
+        print(Fore.RED + "Invalid choice, please try again. @valueEmptyError")
+        noMenu()
+
+    with open(f'{cipherName}.json', 'r') as f:
+        jsonCipher = json.load(f)
+        for key, value in jsonCipher.items():
+            sentence = sentence.replace(value, key)
+        print(Fore.GREEN + sentence)
+
+    noMenu()
+    
 
 def manageCipher(cipherName):
     with open(f'{cipherName}.json', 'r') as f:
@@ -166,11 +284,16 @@ def manageCipher(cipherName):
 
         print(Fore.GREEN + tabulate(table, headers, tablefmt="fancy_grid"))
 
+        print(Fore.YELLOW + "To open translation menu, type 'T'")
+
         print(Fore.GREEN + "1. Change name")
         print(Fore.GREEN + "2. Change complexity")
         print(Fore.GREEN + "3. Add new words to cipher")
-        print(Fore.GREEN + "4. Delete cipher")
-        print(Fore.GREEN + "5. Back")
+        print(Fore.GREEN + "4. Remove words from cipher")
+        print(Fore.GREEN + "5. Reassign words in cipher")
+        print(Fore.GREEN + "6. Delete cipher")
+        print(Fore.GREEN + "7. Back")
+        print(Fore.GREEN + "8. Advanced Options")
         choice = input(Fore.GREEN + "$: ")
 
         if choice == '1':
@@ -190,6 +313,10 @@ def manageCipher(cipherName):
         elif choice == '3':
             dictCreate(cipherName, jsonCipher['complexity'])
         elif choice == '4':
+            dictRemove(cipherName)
+        elif choice == '5':
+            dictReassign(cipherName, jsonCipher['complexity'])
+        elif choice == '6':
             with open(f'{cipherName}.json', 'r') as f:
                 jsonCipher = json.load(f)
 
@@ -216,8 +343,12 @@ def manageCipher(cipherName):
                 else:
                     print(Fore.RED + "Cipher doesn't exist!")
                     manageCipher(cipherName)
-        elif choice == '5':
+        elif choice == '7':
             browse()
+        elif choice == '8':
+            advancedOptions(cipherName)
+        elif choice == 'T':
+            translate(cipherName)
         else:
             print(Fore.RED + "Invalid choice, please try again. @cipherManagementError")
             manageCipher(cipherName)
