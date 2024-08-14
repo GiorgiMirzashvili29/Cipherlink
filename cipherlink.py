@@ -1,7 +1,9 @@
 import random
-from colorama import Fore, Back, Style
+from colorama import init, Fore, Back, Style
 from tabulate import tabulate
 import json, os
+
+init()
 
 x = random.randint(10, 20)
 
