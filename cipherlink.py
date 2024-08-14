@@ -93,12 +93,12 @@ def createCipher(name, complexity):
         return
     
     jsonCipher = {
-        'ciphername': name,
-        'complexity': complexity
+        'cipherName': name,
+        'cipherComplexity': complexity
     }
 
-    jsonCipher["ciphername"] = name
-    jsonCipher["complexity"] = complexity
+    jsonCipher["cipherName"] = name
+    jsonCipher["cipherComplexity"] = complexity
 
     with open(f'{name}.json', 'w') as f:
         json.dump(jsonCipher, f, indent=4)
@@ -311,11 +311,11 @@ def manageCipher(cipherName):
                 json.dump(jsonCipher, f, indent=4)
             manageCipher(cipherName)
         elif choice == '3':
-            dictCreate(cipherName, jsonCipher['complexity'])
+            dictCreate(cipherName, jsonCipher['cipherComplexity'])
         elif choice == '4':
             dictRemove(cipherName)
         elif choice == '5':
-            dictReassign(cipherName, jsonCipher['complexity'])
+            dictReassign(cipherName, jsonCipher['cipherComplexity'])
         elif choice == '6':
             with open(f'{cipherName}.json', 'r') as f:
                 jsonCipher = json.load(f)
